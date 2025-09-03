@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKELA AI - Advanced Lottery Prediction System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    
+    <!-- Server URL - Render par deploy karne ke baad isko change karna -->
+    <script>
+        const SERVER_URL = window.location.origin;
+    </script>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splash-screen">
+        <div class="splash-content">
+            <h1><i class="fas fa-robot"></i> AKELA AI</h1>
+            <p>Advanced Lottery Prediction System</p>
+            <div class="splash-welcome">Initializing AI Models...</div>
+        </div>
+    </div>
+
+    <!-- Main Interface -->
+    <div class="main-interface" id="main-content">
+        <header>
+            <h1><i class="fas fa-robot"></i> AKELA AI</h1>
+            <div class="subtitle">Advanced Lottery Prediction & Analysis System</div>
+        </header>
+
+        <!-- Prediction Cards -->
+        <div class="prediction-grid">
+            <div class="prediction-item">
+                <div class="prediction-label">Next Period</div>
+                <div class="prediction-value" id="next-period">---</div>
+            </div>
+            <div class="prediction-item">
+                <div class="prediction-label">Number Prediction</div>
+                <div class="prediction-value" id="number-pred">--</div>
+                <div class="confidence" id="number-confidence"><i class="fas fa-chart-line"></i> Confidence: --%</div>
+            </div>
+            <div class="prediction-item">
+                <div class="prediction-label">Size Prediction</div>
+                <div class="prediction-value" id="size-pred">--</div>
+                <div class="confidence" id="size-confidence"><i class="fas fa-chart-line"></i> Confidence: --%</div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar">Initializing System...</div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-database"></i>
+                <div class="stat-value" id="total-records">0</div>
+                <div class="stat-label">Total Records</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-trophy"></i>
+                <div class="stat-value" id="accuracy-rate">0%</div>
+                <div class="stat-label">Accuracy Rate</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-chart-pie"></i>
+                <div class="stat-value" id="size-accuracy">0%</div>
+                <div class="stat-label">Size Accuracy</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-bolt"></i>
+                <div class="stat-value" id="win-streak">0</div>
+                <div class="stat-label">Current Win Streak</div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="tab-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="prediction"><i class="fas fa-crystal-ball"></i> Predictions</div>
+                <div class="tab" data-tab="telegram"><i class="fab fa-telegram"></i> Telegram Settings</div>
+                <div class="tab" data-tab="data"><i class="fas fa-table"></i> Fetched Data</div>
+                <div class="tab" data-tab="game"><i class="fas fa-gamepad"></i> Game</div>
+            </div>
+
+            <!-- Prediction History Tab -->
+            <div id="prediction" class="tab-content active">
+                <div class="card">
+                    <div class="card-header-with-button">
+                        <h3 class="card-title"><i class="fas fa-history"></i> Prediction History</h3>
+                        <div class="card-actions">
+                            <button class="btn btn-danger" id="clear-predictions-btn">
+                                <i class="fas fa-trash"></i> Clear History
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Number</th>
+                                    <th>Size</th>
+                                    <th>Result</th>
+                                </tr>
+                            </thead>
+                            <tbody id="prediction-history">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Telegram Settings Tab -->
+            <div id="telegram" class="tab-content">
+                <div class="card">
+                    <h3 class="card-title"><i class="fab fa-telegram"></i> Telegram Notification Settings</h3>
+                    
+                    <div class="telegram-settings-box">
+                        <div class="form-group">
+                            <label class="form-label">Bot Token</label>
+                            <input type="text" class="form-control" id="bot-token" placeholder="Enter Telegram Bot Token">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Channel ID</label>
+                            <input type="text" class="form-control" id="channel-id" placeholder="Enter Channel ID">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Message Template</label>
+                            <textarea class="form-control" id="message-template" rows="3">PERIOD ➪ {issueNumber}
+RESULT ➪ {size} / {number}</textarea>
+                        </div>
+                        <button class="btn btn-primary" id="save-telegram-settings">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </div>
+
+                    <div class="scheduled-messages">
+                        <h3><i class="fas fa-clock"></i> Scheduled Messages</h3>
+                        <div class="time-slots">
+                            <div class="time-slot">
+                                <div class="form-group">
+                                    <label class="form-label">Time</label>
+                                    <input type="time" class="form-control" id="scheduled-time-1" value="09:00">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Message</label>
+                                    <input type="text" class="form-control" id="scheduled-message-1" value="Good morning! Predictions activated.">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button class="btn btn-primary" onclick="addScheduledMessage(1)">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="toggle-scheduled-btn">
+                            <i class="fas fa-clock"></i> Start Scheduled Messages
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fetched Data Tab -->
+            <div id="data" class="tab-content">
+                <div class="card">
+                    <div class="card-header-with-button">
+                        <h3 class="card-title"><i class="fas fa-database"></i> Fetched Data</h3>
+                        <div class="last-updated">
+                            <i class="fas fa-sync-alt"></i> <span id="last-updated">Last updated: --</span>
+                            <button class="refresh-btn" id="refresh-btn">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Number</th>
+                                    <th>Size</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fetched-data-table">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-danger" id="clear-fetched-btn">
+                            <i class="fas fa-trash"></i> Clear Fetched Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Tab -->
+            <div id="game" class="tab-content">
+                <div class="card">
+                    <h3 class="card-title"><i class="fas fa-gamepad"></i> Game Platform</h3>
+                    <div class="game-controls">
+                        <button class="btn btn-primary full-screen-btn" id="toggle-fullscreen-btn">
+                            <i class="fas fa-expand"></i> Full Screen
+                        </button>
+                    </div>
+                    <iframe id="game-iframe" src="about:blank" width="100%" height="600" frameborder="0" style="border: 1px solid #ccc; border-radius: 8px;"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Controls -->
+        <div class="card">
+            <h3 class="card-title"><i class="fas fa-play-circle"></i> Session Controls</h3>
+            <div class="form-group">
+                <label class="form-label">Auto End After</label>
+                <input type="number" class="form-control" id="session-end-count" value="10" min="1" max="100">
+                <small>Number of predictions before auto-ending session</small>
+            </div>
+            <button class="btn btn-primary" id="session-toggle">
+                <i class="fas fa-play"></i> Start Auto Session
+            </button>
+        </div>
+
+        <!-- Notification -->
+        <div class="notification" id="notification">
+            <i class="fas fa-info-circle"></i>
+            <span id="notification-message">Notification message will appear here</span>
+        </div>
+
+        <!-- Session Stats Popup -->
+        <div class="session-stats-popup" id="session-stats-popup">
+            <div class="popup-header">
+                <h4><i class="fas fa-chart-bar"></i> Session Stats</h4>
+            </div>
+            <div class="popup-content">
+                <div class="stat-item">
+                    <span>Total Predictions:</span>
+                    <span id="popup-total">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Wins:</span>
+                    <span id="popup-wins" class="win-text">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>Losses:</span>
+                    <span id="popup-losses" class="loss-text">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Center Button -->
+        <div class="help-center-btn">
+            <i class="fab fa-whatsapp"></i>
+        </div>
+
+        <footer>
+            <p>AKELA AI &copy; 2023. Advanced Lottery Prediction System.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+              </html>
